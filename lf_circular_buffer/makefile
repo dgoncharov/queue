@@ -1,0 +1,33 @@
+MAKEFLAGS+=-Rr
+SHELL:=/bin/bash
+.ONESHELL:
+.SECONDEXPANSION:
+.NOTINTERMEDIATE: %.d %.h
+.SECONDARY: logger.o lf_circular_buffer.o lf_circular_buffer_mpmc.t.o
+
+srcdir:=..
+vpath %.cpp $(srcdir) $(srcdir)/../logger
+
+all_cppflags:=-I$(srcdir) -I$(srcdir)/../logger $(CPPFLAGS)
+all_cflags:=-Wall -Wextra -Werror -Wfatal-errors -ggdb -O0 -m64 -std=c++17 $(CFLAGS)
+
+obj:=logger.o lf_circular_buffer.o lf_circular_buffer_mpmc.t.o
+dfiles:=$(obj:.o=.d)
+
+target:=lf_circular_buffer_mpmc.t.tsk
+all: $(target)
+$(target): $(obj)
+	gcc -o $@ $^ -lstdc++ -lpthread
+
+%.o: %.cpp %.d $$(file <%.d)
+	g++ $(all_cppflags) $(all_cflags) -MMD -MF $*.td -o $@ -c $<
+	read obj src headers <$*.td; echo "$$headers" >$*.d
+	touch -c $@
+
+$(dfiles): ;
+%.h:;
+
+clean:
+	rm -f $(target) $(obj) $(dfiles) $(obj:.o=.td)
+
+makefile::;
