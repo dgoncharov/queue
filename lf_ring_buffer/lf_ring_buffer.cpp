@@ -4,6 +4,7 @@
 #include <iostream>
 #include <assert.h>
 #include <string.h>
+#include <sys/types.h>
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <unistd.h>
@@ -21,7 +22,7 @@ d_rpos(d_begin)
     d_begin[d_size-1].next = d_begin;
 
     for (size_t k = 0; k < d_size; ++k)
-        d_begin[k].value = d_begin[k].owner = 0;
+        d_begin[k].value = 0, d_begin[k].owner = 0;
 }
 
 lf_ring_buffer::~lf_ring_buffer()
@@ -30,17 +31,19 @@ lf_ring_buffer::~lf_ring_buffer()
     free(d_begin);
 }
 
-void lf_ring_buffer::push(int value)
+void lf_ring_buffer::push(char* value)
 {
     assert(value);
 
     for (;;) {
         // Advance the pointer to the next slot.
         buffer* pos = d_wpos.load(std::memory_order_relaxed);
+//        logger(std::cout) << "advancing " << pos << '\n';
         while (d_wpos.compare_exchange_weak(pos, d_wpos.load(std::memory_order_relaxed)->next) == false)
             ;
 
         // Occupy the chosen slot.
+//        logger(std::cout) << "locking " << pos << '\n';
         static const thread_local pid_t mypid = gettid();
         assert(mypid > 0);
         pid_t pid = pos->owner.load(std::memory_order_relaxed);
@@ -51,32 +54,36 @@ void lf_ring_buffer::push(int value)
                 break;
             else
                 pid = 0;
-        if (pid > 0)
+        if (pid > 0) {
             // This slot is occupied by another producer.
             // Move on to the next slot.
+//            logger(std::cout) << pos << " is occupied by another producer\n";
             continue;
-        logger(std::cout) << " producer occupied slot " << pos << '\n';
+        }
         assert(pid != mypid);
         assert(pos->owner == mypid);
         pos->value = value;
-        logger(std::cout) << " producer releasing slot " << pos << '\n';
+//        logger(std::cout) << "pushed " << value << '\n';
         pos->owner = 0;
-        logger(std::cout) << " producer released slot " << pos << '\n';
+        // value cannot be accessed below this line.
+        // A consumer may have already consumed and freed this value.
         break;
     }
 }
 
 
-int lf_ring_buffer::pop()
+char* lf_ring_buffer::pop()
 {
-    int result;
+    char* result;
     for (;;) {
         // Advance the pointer to the next slot.
         buffer* pos = d_rpos.load(std::memory_order_relaxed);
+//        logger(std::cout) << "advancing " << pos << '\n';
         while (d_rpos.compare_exchange_weak(pos, d_rpos.load(std::memory_order_relaxed)->next) == false)
             ;
 
         // Occupy the chosen slot.
+//        logger(std::cout) << "locking " << pos << '\n';
         static const thread_local pid_t mypid = gettid();
         assert(mypid > 0);
         pid_t pid = pos->owner.load(std::memory_order_relaxed);
@@ -87,21 +94,23 @@ int lf_ring_buffer::pop()
                 break;
             else
                 pid = 0;
-        if (pid < 0)
+        if (pid < 0) {
             // This slot is occupied by another consumer.
             // Move on to the next slot.
+//            logger(std::cout) << pos << " is occupied by another consumer\n";
             continue;
-        logger(std::cout) << " consumer occupied slot " << pos << '\n';
+        }
         assert(pid != -mypid);
         assert(pos->owner == -mypid);
+//        logger(std::cout) << "locked " << pos << '\n';
 
         result = pos->value;
-        if (result == 0)
+        pos->owner = 0; // Release the slot.
+        if (result == 0) {
+//            logger(std::cout) << "empty slot\n";
             continue;
+        }
         pos->value = 0;
-        logger(std::cout) << " consumer releasing slot " << pos << '\n';
-        pos->owner = 0;
-        logger(std::cout) << " consumer released slot " << pos << '\n';
         break;
     }
     assert(result);

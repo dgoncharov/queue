@@ -6,7 +6,7 @@
 #include <sys/types.h>
 
 struct buffer {
-    int value;
+    char* value;
     std::atomic<buffer*> next;
     std::atomic<pid_t> owner;
 };
@@ -15,8 +15,8 @@ class lf_ring_buffer {
 public:
     explicit lf_ring_buffer(size_t size);
     ~lf_ring_buffer();
-    void push(int k);
-    int pop();
+    void push(char* value);
+    char* pop();
 
 private:
     size_t d_size;
