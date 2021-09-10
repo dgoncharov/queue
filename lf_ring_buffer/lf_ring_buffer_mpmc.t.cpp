@@ -31,7 +31,7 @@ int producer_main(lf_ring_buffer* q)
     for (int k = 0; ; ++k) {
         char* value = generate(pid, k);
         q->push(value);
-        // value cannot be accessed below this line.
+        // value cannot be accessed after push.
     }
     return 0;
 }
