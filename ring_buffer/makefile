@@ -5,16 +5,16 @@ SHELL:=/bin/bash
 .NOTINTERMEDIATE: %.d %.h
 
 srcdir:=..
-vpath %.cpp $(srcdir) $(srcdir)/../logger
+vpath %.cpp $(srcdir)
 
-#asan_flags:=-fsanitize=address -fsanitize=pointer-compare -fsanitize=leak -fsanitize=undefined
-asan_flags:=-fsanitize=thread
-all_cppflags:=-I$(srcdir) -I$(srcdir)/../logger $(CPPFLAGS)
+asan_flags:=-fsanitize=address -fsanitize=pointer-compare -fsanitize=leak -fsanitize=undefined
+#asan_flags:=-fsanitize=thread
+all_cppflags:=-I$(srcdir) $(CPPFLAGS)
 all_cflags:=-Wall -Wextra -Werror -Wfatal-errors -ggdb -O0 -m64 -std=c++17\
   $(asan_flags) $(CFLAGS)
 all_ldflags:=$(asan_flags) $(LDFLAGS)
 
-obj:=logger.o ring_buffer.o ring_buffer.t.o
+obj:=ring_buffer.o ring_buffer.t.o
 dfiles:=$(obj:.o=.d)
 .SECONDARY: $(obj)
 
