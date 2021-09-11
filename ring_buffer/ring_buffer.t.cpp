@@ -9,7 +9,7 @@ void test_empty1()
 {
     int value, rc, size;
     int buf[8];
-    ring_buffer rb(buf, (sizeof buf)/(sizeof *buf));
+    ring_buffer<int> rb(buf, (sizeof buf)/(sizeof *buf));
 
     rc = rb.empty();
     ASSERT(rc, rc);
@@ -17,8 +17,8 @@ void test_empty1()
     ASSERT(size == 0, size);
     rb.print(std::cout);
 
-    value = rb.pop();
-    ASSERT(value == -1, value);
+    rc = rb.checked_pop(&value);
+    ASSERT(rc == -1, rc);
     rc = rb.empty();
     ASSERT(rc, rc);
 
@@ -35,8 +35,8 @@ void test_empty1()
     rc = rb.empty();
     ASSERT(rc, rc);
 
-    value = rb.pop();
-    ASSERT(value == -1, value);
+    rc = rb.checked_pop(&value);
+    ASSERT(rc == -1, rc);
     rc = rb.empty();
     ASSERT(rc, rc);
 }
@@ -45,7 +45,7 @@ void test_empty2()
 {
     int value, rc, size, cap, full;
     int buf[8];
-    ring_buffer rb(buf, (sizeof buf)/(sizeof *buf));
+    ring_buffer<int> rb(buf, (sizeof buf)/(sizeof *buf));
 
     rc = rb.empty();
     ASSERT(rc, rc);
@@ -54,7 +54,7 @@ void test_empty2()
     rb.print(std::cout);
 
     cap = rb.capacity();
-    ASSERT(cap == sizeof buf, cap);
+    ASSERT(cap == (sizeof buf)/(sizeof *buf), cap);
 
     for (int k = 1; k < 10; ++k) {
         rb.push(k);
@@ -97,15 +97,15 @@ void test_empty2()
     full = rb.full();
     ASSERT(full == 0, full, size);
 
-    value = rb.pop();
-    ASSERT(value == -1, value);
+    rc = rb.checked_pop(&value);
+    ASSERT(rc == -1, rc);
 }
 
 void test_capacity()
 {
     int cap;
     int buf[8];
-    ring_buffer rb(buf, (sizeof buf)/(sizeof *buf));
+    ring_buffer<int> rb(buf, (sizeof buf)/(sizeof *buf));
 
     cap = rb.capacity();
     ASSERT(cap == (sizeof buf)/(sizeof *buf), cap);
@@ -115,7 +115,7 @@ void test_clear()
 {
     int rc, size;
     int buf[8];
-    ring_buffer rb(buf, (sizeof buf)/(sizeof *buf));
+    ring_buffer<int> rb(buf, (sizeof buf)/(sizeof *buf));
 
     rb.push(1);
 
@@ -132,7 +132,7 @@ void test_push()
 {
     int value;
     int buf[8];
-    ring_buffer rb(buf, (sizeof buf)/(sizeof *buf));
+    ring_buffer<int> rb(buf, (sizeof buf)/(sizeof *buf));
 
     rb.push(0);
     rb.print(std::cout);
