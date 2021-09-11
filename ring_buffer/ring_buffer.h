@@ -37,7 +37,6 @@ template <typename T>
 void ring_buffer<T>::push(const T& value)
 {
     integrity();
-    assert(value >= 0); // To let -1 be used as an error code from pop.
     const int oldhead = d_head;
     d_buf[d_head] = value;
     if (d_wrapped && d_head >= d_tail)
