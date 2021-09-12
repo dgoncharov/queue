@@ -54,13 +54,15 @@ void lf_ring_buffer::push(char* value)
                 break;
             else
                 pid = 0;
+        // This is a critical section. If the scheduler decides to sleep this
+        // thread now, the threads spinning on pos->owner will be burning cpu.
         if (pid > 0) {
             // This slot is occupied by another producer.
             // Move on to the next slot.
 //            logger(std::cout) << pos << " is occupied by another producer\n";
             continue;
         }
-        assert(pid != mypid);
+        assert(pid == 0);
         assert(pos->owner == mypid);
         pos->value = value;
 //        logger(std::cout) << "pushed " << value << '\n';
