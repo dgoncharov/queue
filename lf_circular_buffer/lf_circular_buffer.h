@@ -1,31 +1,20 @@
 #ifndef LF_CIRCULAR_BUFFER_H
 #define LF_CIRCULAR_BUFFER_H
 
-#include <iosfwd>
 #include <atomic>
-#include <stddef.h>
 
-struct buffer {
-    explicit buffer(size_t size);
-    ~buffer();
-    size_t push(int k);
-    void clear();
-    std::ostream& print(std::ostream& out) const;
+template <typename T>
+struct ring_buffer;
 
-private:
-    buffer(const buffer&);
-    size_t d_size;
-    int* d_begin;
-    int* d_pos;
-};
-
+typedef ring_buffer<char*> ring_buffer_t;
 class lf_circular_buffer {
 public:
-    lf_circular_buffer(buffer* buf);
-    buffer* exchange(buffer* buf);
+    lf_circular_buffer(ring_buffer_t* buf);
+    ring_buffer_t* push(ring_buffer_t* buf);
+    ring_buffer_t* pop(ring_buffer_t* buf);
 
 private:
-    std::atomic<buffer*> d_buf;
+    std::atomic<ring_buffer_t*> d_buf;
 };
 
 #endif
