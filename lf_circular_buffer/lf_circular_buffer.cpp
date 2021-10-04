@@ -39,9 +39,9 @@ buffer_t* lf_circular_buffer::push(buffer_t* newbuf)
         }
         if (buf->size()) {
             // This thread was able to successfully exchange buf and newbuf.
-            // However, between buf->empty check and the following compare_exchange another
+            // However, between buf->size check and the following compare_exchange another
             // producer called lf_circular_buffer::push and also found the same buf empty
-            // and replaced it with its own newbuf and then filled up buf and came back and
+            // and replaced it with its own newbuf and then filled it up and came back and
             // pushed buf back successfully.
             // This thread then resumed and found that buf is the same and thus
             // compare_exchange succeeded, but the buf is now full.
