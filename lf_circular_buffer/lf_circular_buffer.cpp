@@ -23,11 +23,11 @@ buffer_t* lf_circular_buffer::push(buffer_t* newbuf)
 {
     ASSERT(newbuf->size());
 
-    ASSERT(d_buf.load() != newbuf);
     buffer_t* buf = d_buf.load(std::memory_order_relaxed);
     for (;;) {
-        // Wait till the current buffer is empty.
         logger(std::cout) << "pushing " << newbuf << ", buf = " << buf << '\n';
+        ASSERT(buf != newbuf);
+        // Wait till the current buffer is empty.
         while (buf->empty() == 0)
             std::this_thread::yield();
         buffer_t* b = buf;
@@ -37,7 +37,7 @@ buffer_t* lf_circular_buffer::push(buffer_t* newbuf)
             logger(std::cout) << "another producer took " << b << ", new buf = " << buf << '\n';
             continue;
         }
-        if (buf->empty() == 0) {
+        if (buf->size()) {
             // This thread was able to successfully exchange buf and newbuf.
             // However, between buf->empty check and the following compare_exchange another
             // producer called lf_circular_buffer::push and also found the same buf empty
