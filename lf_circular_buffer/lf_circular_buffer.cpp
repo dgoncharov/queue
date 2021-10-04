@@ -1,5 +1,4 @@
 #include "lf_circular_buffer.h"
-#include "ring_buffer.h"
 #include "logger.h"
 #include "assert.h"
 #include <thread>
@@ -7,7 +6,7 @@
 #define ASSERT(c) do { if ((c) == 0) { logger(std::cerr) << "assert faield "; assert(c); } } while (0)
 
 static
-std::ostream& operator<<(std::ostream& out, const ring_buffer_t& x)
+std::ostream& operator<<(std::ostream& out, const buffer_t& x)
 {
     const char* comma = "";
     for (size_t k = 0, len = x.size(); k < len; ++k, comma = ", ")
@@ -15,23 +14,23 @@ std::ostream& operator<<(std::ostream& out, const ring_buffer_t& x)
     return out;
 }
 
-lf_circular_buffer::lf_circular_buffer(ring_buffer_t *buf)
+lf_circular_buffer::lf_circular_buffer(buffer_t *buf)
 : d_buf(buf)
 {
 }
 
-ring_buffer_t* lf_circular_buffer::push(ring_buffer_t* newbuf)
+buffer_t* lf_circular_buffer::push(buffer_t* newbuf)
 {
     ASSERT(newbuf->size());
 
     ASSERT(d_buf.load() != newbuf);
-    ring_buffer_t* buf = d_buf.load(std::memory_order_relaxed);
+    buffer_t* buf = d_buf.load(std::memory_order_relaxed);
     for (;;) {
         // Wait till the current buffer is empty.
         logger(std::cout) << "pushing " << newbuf << ", buf = " << buf << '\n';
         while (buf->empty() == 0)
             std::this_thread::yield();
-        ring_buffer_t* b = buf;
+        buffer_t* b = buf;
         if (d_buf.compare_exchange_weak(buf, newbuf) == false) {
             // Another producer or consumer swapped the buffer after the empty
             // check.
@@ -62,18 +61,18 @@ ring_buffer_t* lf_circular_buffer::push(ring_buffer_t* newbuf)
     return buf;
 }
 
-ring_buffer_t* lf_circular_buffer::pop(ring_buffer_t* newbuf)
+buffer_t* lf_circular_buffer::pop(buffer_t* newbuf)
 {
     ASSERT(newbuf->empty());
 
-    ring_buffer_t* buf = d_buf.load(std::memory_order_relaxed);
+    buffer_t* buf = d_buf.load(std::memory_order_relaxed);
     for (;;) {
         logger(std::cout) << "pop pushing " << newbuf << ", buf = " << buf << '\n';
         ASSERT(buf != newbuf);
         // Wait till the current buffer has data.
         while (buf->empty())
             std::this_thread::yield();
-        ring_buffer_t* b = buf;
+        buffer_t* b = buf;
         if (d_buf.compare_exchange_weak(buf, newbuf) == false) {
             // Another producer or consumer swapped the buffer after the empty
             // check.

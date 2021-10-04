@@ -24,9 +24,9 @@ int producer_main(lf_circular_buffer* q)
     static std::atomic<int> count = 0;
     thread_local int id = count++;
     logger(std::cout) << __func__ << '\n';
-    ring_buffer_t mybuf;
+    buffer_t mybuf;
     mybuf.reserve(bufsz);
-    ring_buffer_t* buf = &mybuf;
+    buffer_t* buf = &mybuf;
     logger(std::cout) << "producer starting with buf at " << buf << '\n';
     for (int k = 1; k > 0; ++k) {
         char* value = generate(id, k);
@@ -47,9 +47,9 @@ static
 int consumer_main(lf_circular_buffer* q)
 {
     logger(std::cout) << __func__ << '\n';
-    ring_buffer_t mybuf;
+    buffer_t mybuf;
     mybuf.reserve(bufsz);
-    ring_buffer_t* buf = &mybuf;
+    buffer_t* buf = &mybuf;
     logger(std::cout) << "consumer starting with buf at " << buf << '\n';
     for (;;) {
         buf = q->pop(buf);
@@ -77,7 +77,7 @@ int consumer_main(lf_circular_buffer* q)
 
 int main(int, char* [])
 {
-    ring_buffer_t mybuf;
+    buffer_t mybuf;
     mybuf.reserve(bufsz);
     logger(std::cout) << "main starting with buf at " << &mybuf << '\n';
     lf_circular_buffer q(&mybuf);
