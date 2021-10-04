@@ -2,11 +2,9 @@
 #define LF_CIRCULAR_BUFFER_H
 
 #include <atomic>
+#include <vector>
 
-template <typename T>
-struct ring_buffer;
-
-typedef ring_buffer<char*> ring_buffer_t;
+typedef std::vector<char*> ring_buffer_t;
 class lf_circular_buffer {
 public:
     lf_circular_buffer(ring_buffer_t* buf);

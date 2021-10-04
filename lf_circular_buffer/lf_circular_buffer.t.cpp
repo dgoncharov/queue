@@ -1,5 +1,4 @@
 #include "lf_circular_buffer.h"
-#include "ring_buffer.h"
 #include "logger.h"
 #include <iostream>
 #include <thread>
@@ -25,16 +24,15 @@ int producer_main(lf_circular_buffer* q)
     static std::atomic<int> count = 0;
     thread_local int id = count++;
     logger(std::cout) << __func__ << '\n';
-    char* buffer[bufsz];
-    ring_buffer<char*> mybuf(buffer, bufsz);
-    assert(mybuf.empty());
-    ring_buffer<char*>* buf = &mybuf;
+    ring_buffer_t mybuf;
+    mybuf.reserve(bufsz);
+    ring_buffer_t* buf = &mybuf;
     logger(std::cout) << "producer starting with buf at " << buf << '\n';
     for (int k = 1; k > 0; ++k) {
         char* value = generate(id, k);
-        buf->push(value);
+        buf->push_back(value);
 //        logger(std::cout) << "pushed " << value << " to " << buf << '\n';
-        if (buf->full()) {
+        if (buf->size() >= bufsz) {
             buf = q->push(buf);
             // Have to clear, because buf may not be empty.
             buf->clear();
@@ -49,16 +47,14 @@ static
 int consumer_main(lf_circular_buffer* q)
 {
     logger(std::cout) << __func__ << '\n';
-    char* buffer[bufsz];
-    ring_buffer<char*> mybuf(buffer, bufsz);
-    assert(mybuf.empty());
-    ring_buffer<char*>* buf = &mybuf;
+    ring_buffer_t mybuf;
+    mybuf.reserve(bufsz);
+    ring_buffer_t* buf = &mybuf;
     logger(std::cout) << "consumer starting with buf at " << buf << '\n';
     for (;;) {
         buf = q->pop(buf);
-        assert(buf->full());
-        for (int k = 0, len = buf->size(); k < len; ++k) {
-            char* value = buf->pop();
+        assert(buf->size() == bufsz);
+        for (char* value: *buf) {
             assert(value);
             char s[64];
             int id, newval;
@@ -81,8 +77,8 @@ int consumer_main(lf_circular_buffer* q)
 
 int main(int, char* [])
 {
-    char* buffer[bufsz];
-    ring_buffer<char*> mybuf(buffer, bufsz);
+    ring_buffer_t mybuf;
+    mybuf.reserve(bufsz);
     logger(std::cout) << "main starting with buf at " << &mybuf << '\n';
     lf_circular_buffer q(&mybuf);
     for (int k = 0; k < 8; ++k) {

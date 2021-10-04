@@ -6,6 +6,15 @@
 
 #define ASSERT(c) do { if ((c) == 0) { logger(std::cerr) << "assert faield "; assert(c); } } while (0)
 
+static
+std::ostream& operator<<(std::ostream& out, const ring_buffer_t& x)
+{
+    const char* comma = "";
+    for (size_t k = 0, len = x.size(); k < len; ++k, comma = ", ")
+        out << comma << x[k];
+    return out;
+}
+
 lf_circular_buffer::lf_circular_buffer(ring_buffer_t *buf)
 : d_buf(buf)
 {
@@ -13,7 +22,7 @@ lf_circular_buffer::lf_circular_buffer(ring_buffer_t *buf)
 
 ring_buffer_t* lf_circular_buffer::push(ring_buffer_t* newbuf)
 {
-    ASSERT(newbuf->full());
+    ASSERT(newbuf->size());
 
     ASSERT(d_buf.load() != newbuf);
     ring_buffer_t* buf = d_buf.load(std::memory_order_relaxed);
@@ -85,6 +94,6 @@ ring_buffer_t* lf_circular_buffer::pop(ring_buffer_t* newbuf)
         break;
     }
     logger(std::cout) << "pushed " << newbuf << ", poped buf = " << buf << " " << *buf << '\n';
-    ASSERT(buf->full()); // This ASSERT fires somehow misteriosly.
+    ASSERT(buf->size());
     return buf;
 }
