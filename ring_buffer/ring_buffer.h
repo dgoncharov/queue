@@ -99,9 +99,7 @@ int ring_buffer<T>::full() const
 template <typename T>
 int ring_buffer<T>::empty() const
 {
-    if (d_wrapped)
-        return false;
-    return d_tail == d_head;
+    return d_tail == d_head && d_wrapped == 0;
 }
 
 template <typename T>
