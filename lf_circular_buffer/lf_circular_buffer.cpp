@@ -77,8 +77,10 @@ ring_buffer_t* lf_circular_buffer::pop(ring_buffer_t* newbuf)
             // buf->empty check and subsequent compare_exchange.
             // Then this thread resumed and discovered that compare_exchange
             // succeeded, but buf is empty.
-            logger(std::cout) << buf << " still empty\n";
-            return buf;
+            logger(std::cout) << buf << " still empty, trying again\n";
+            newbuf = buf;
+            buf = d_buf.load(std::memory_order_relaxed);
+            continue;
         }
         break;
     }

@@ -56,8 +56,6 @@ int consumer_main(lf_circular_buffer* q)
     logger(std::cout) << "consumer starting with buf at " << buf << '\n';
     for (;;) {
         buf = q->pop(buf);
-        if (buf->empty())
-            continue;
         assert(buf->full());
         for (int k = 0, len = buf->size(); k < len; ++k) {
             char* value = buf->pop();
