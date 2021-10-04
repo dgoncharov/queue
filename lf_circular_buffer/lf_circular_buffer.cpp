@@ -28,7 +28,7 @@ buffer_t* lf_circular_buffer::push(buffer_t* newbuf)
         logger(std::cout) << "pushing " << newbuf << ", buf = " << buf << '\n';
         ASSERT(buf != newbuf);
         // Wait till the current buffer is empty.
-        while (buf->empty() == 0)
+        while (buf->size())
             std::this_thread::yield();
         buffer_t* b = buf;
         if (d_buf.compare_exchange_weak(buf, newbuf) == false) {
