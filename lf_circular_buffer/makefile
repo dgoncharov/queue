@@ -8,7 +8,7 @@ vpath %.cpp $(srcdir) $(srcdir)/../logger
 
 #asan_flags:=-fsanitize=address -fsanitize=pointer-compare -fsanitize=leak -fsanitize=undefined
 asan_flags:=-fsanitize=thread
-all_cppflags:=-I$(srcdir) -I$(srcdir)/../ring_buffer -I$(srcdir)/../logger $(CPPFLAGS)
+all_cppflags:=-I$(srcdir) -I$(srcdir)/../logger $(CPPFLAGS)
 all_cxxflags:=-Wall -Wextra -Werror -Wfatal-errors -ggdb -O0 -m64 -std=c++17\
   $(asan_flags) $(CXXFLAGS)
 all_ldflags:=$(asan_flags) $(LDFLAGS)
