@@ -2,7 +2,6 @@ MAKEFLAGS+=-Rr
 SHELL:=/bin/bash
 .ONESHELL:
 .SECONDEXPANSION:
-.NOTINTERMEDIATE: %.d %.h
 
 srcdir:=..
 vpath %.cpp $(srcdir) $(srcdir)/../logger
