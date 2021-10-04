@@ -1,71 +1,88 @@
 #include "lf_circular_buffer.h"
+#include "ring_buffer.h"
 #include "logger.h"
+#include "assert.h"
 #include <thread>
-#include <iostream>
-#include <assert.h>
-#include <string.h>
 
-buffer::buffer(size_t size)
-: d_size(size), d_begin((int*) malloc(size * sizeof(int))), d_pos(d_begin)
-{
-    assert(size);
-    logger(std::cout) << "allocated " << (void*) d_begin << '\n';
-    assert(d_begin);
-}
+#define ASSERT(c) do { if ((c) == 0) { logger(std::cerr) << "assert faield "; assert(c); } } while (0)
 
-buffer::~buffer()
-{
-    logger(std::cout) << "freeing " << (void*) d_begin << '\n';
-    free(d_begin);
-}
-
-size_t buffer::push(int k)
-{
-    const int* end = d_begin + d_size;
-    assert(d_pos < end);
-    *d_pos = k;
-    ++d_pos;
-    if (d_pos >= end)
-        d_pos = d_begin;
-    assert(d_pos < end);
-    logger(std::cout) << "pushed " << k << " to " << (void*) d_begin << '\n';
-    return d_pos - d_begin;
-}
-
-void buffer::clear()
-{
-    d_pos = d_begin;
-    memset(d_begin, 0, d_size*sizeof(int));
-}
-
-std::ostream& buffer::print(std::ostream& out) const
-{
-    out << "begin = " << d_begin
-        << ", pos = " << d_pos
-        << ", d_pos - d_begin = " << d_pos - d_begin
-        << ", *d_begin = " << *d_begin
-        << ", values = ";
-    const int* end = d_begin + d_size;
-    assert(d_pos < end);
-    const char* comma = "";
-    if (d_pos > d_begin || *d_begin)
-        for (const int* p = d_pos; p < end; ++p, comma = ", ")
-            out << comma << *p;
-    for (const int* p = d_begin; p < d_pos; ++p, comma = ", ")
-        out << comma << *p;
-    out << '\n';
-    return out;
-}
-
-lf_circular_buffer::lf_circular_buffer(buffer *buf)
+lf_circular_buffer::lf_circular_buffer(ring_buffer_t *buf)
 : d_buf(buf)
 {
 }
 
-buffer* lf_circular_buffer::exchange(buffer* newbuf)
+ring_buffer_t* lf_circular_buffer::push(ring_buffer_t* newbuf)
 {
-    buffer* buf = d_buf.load(std::memory_order_relaxed);
-    while (d_buf.compare_exchange_weak(buf, newbuf) == false)
-        ;
+    ASSERT(newbuf->full());
+
+    ASSERT(d_buf.load() != newbuf);
+    ring_buffer_t* buf = d_buf.load(std::memory_order_relaxed);
+    for (;;) {
+        // Wait till the current buffer is empty.
+        logger(std::cout) << "pushing " << newbuf << ", buf = " << buf << '\n';
+        while (buf->empty() == 0)
+            std::this_thread::yield();
+        ring_buffer_t* b = buf;
+        if (d_buf.compare_exchange_weak(buf, newbuf) == false) {
+            // Another producer or consumer swapped the buffer after the empty
+            // check.
+            logger(std::cout) << "another producer took " << b << ", new buf = " << buf << '\n';
+            continue;
+        }
+        if (buf->empty() == 0) {
+            // This thread was able to successfully exchange buf and newbuf.
+            // However, between buf->empty check and the following compare_exchange another
+            // producer called lf_circular_buffer::push and also found the same buf empty
+            // and replaced it with its own newbuf and then filled up buf and came back and
+            // pushed buf back successfully.
+            // This thread then resumed and found that buf is the same and thus
+            // compare_exchange succeeded, but the buf is now full.
+            // This is unfortunate, because this means that the data in this
+            // buf cannot be consumed. It has to be discarded to guarantee the
+            // fifo property of the ring buffer. If this data is not discarded,
+            // but rather pushed again for consumption, it is possible that the
+            // producer which originally filled this buf already pushed some
+            // later data and that the later data were already consumed.
+            logger(std::cout) << buf << " still not empty\n";
+            return buf;
+        }
+        break;
+    }
+    logger(std::cout) << "pushed " << newbuf << ", retrieved " << buf << '\n';
+    ASSERT(buf->empty());
+    return buf;
+}
+
+ring_buffer_t* lf_circular_buffer::pop(ring_buffer_t* newbuf)
+{
+    ASSERT(newbuf->empty());
+
+    ring_buffer_t* buf = d_buf.load(std::memory_order_relaxed);
+    for (;;) {
+        logger(std::cout) << "pop pushing " << newbuf << ", buf = " << buf << '\n';
+        ASSERT(buf != newbuf);
+        // Wait till the current buffer has data.
+        while (buf->empty())
+            std::this_thread::yield();
+        ring_buffer_t* b = buf;
+        if (d_buf.compare_exchange_weak(buf, newbuf) == false) {
+            // Another producer or consumer swapped the buffer after the empty
+            // check.
+            logger(std::cout) << "another consumer took " << b << ", new buf = " << buf << '\n';
+            continue;
+        }
+        logger(std::cout) << "poped " << buf << '\n';
+        if (buf->empty()) {
+            // Another consumer took, emptied and returned the buffer between
+            // buf->empty check and subsequent compare_exchange.
+            // Then this thread resumed and discovered that compare_exchange
+            // succeeded, but buf is empty.
+            logger(std::cout) << buf << " still empty\n";
+            return buf;
+        }
+        break;
+    }
+    logger(std::cout) << "pushed " << newbuf << ", poped buf = " << buf << " " << *buf << '\n';
+    ASSERT(buf->full()); // This ASSERT fires somehow misteriosly.
     return buf;
 }
