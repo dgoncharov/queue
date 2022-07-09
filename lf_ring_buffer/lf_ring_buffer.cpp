@@ -56,6 +56,8 @@ void lf_ring_buffer::push(char* value)
                 pid = 0;
         // This is a critical section. If the scheduler decides to sleep this
         // thread now, the threads spinning on pos->owner will be burning cpu.
+        // This whole owner based synchronization resembles a lame impl of a
+        // mutex.
         if (pid > 0) {
             // This slot is occupied by another producer.
             // Move on to the next slot.
