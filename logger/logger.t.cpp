@@ -7,3 +7,9 @@ int main(int, char* [])
 
     return 0;
 }
+
+/* Copyright (c) 2021 Dmitry Goncharov
+ *
+ * Distributed under the BSD License.
+ * (See accompanying file COPYING).
+ */
