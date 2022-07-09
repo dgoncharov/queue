@@ -1,4 +1,4 @@
-MAKEFLAGS+=-Rr
+MAKEFLAGS+=-r
 SHELL:=/bin/bash
 .ONESHELL:
 .SECONDEXPANSION:
@@ -20,10 +20,10 @@ dfiles:=$(obj:.o=.d)
 target:=lf_circular_buffer.t.tsk
 all: $(target)
 $(target): $(obj)
-	gcc -o $@ $^ $(all_ldflags) -lstdc++ -lpthread
+	$(CXX) -o $@ $^ $(all_ldflags) -lubsan -lstdc++ -lpthread
 
 %.o: %.cpp %.d $$(file <%.d)
-	g++ $(all_cppflags) $(all_cxxflags) -MMD -MF $*.td -o $@ -c $<
+	$(CXX) $(all_cppflags) $(all_cxxflags) -MMD -MF $*.td -o $@ -c $<
 	read obj src headers <$*.td; echo "$$headers" >$*.d
 	touch -c $@
 
@@ -34,3 +34,8 @@ clean:
 	rm -f $(target) $(obj) $(dfiles) $(obj:.o=.td)
 
 makefile::;
+
+# Copyright (c) 2021 Dmitry Goncharov
+#
+# Distributed under the BSD License.
+# (See accompanying file COPYING).
