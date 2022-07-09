@@ -1,0 +1,42 @@
+This is a lock free impl of a ring buffer which supports multiple producers and
+multiple consumers.
+
+lf_circular_buffer.h lf_circular_buffer.cpp contain the impl of the ring buffer.
+lf_circular_buffer.t.cpp is a test program.
+Each producer and consumers occupies a dedicated thread.
+
+This impl works by allocating a dedicated data buffer for each consumer and producer
+and one more data buffer in the queue.
+
+When a producer cannot push, because the ring buffer is full an impl can do
+at least one of the following
+
+1. Overwrite some older data in the ring buffer.
+2. Drop the new data.
+3. Block the producer until there is room in the ring buffer.
+
+This impl does a combination of the above.
+In the description below the ring buffer is called the queue to avoid confusion
+with data buffer.
+Specifically, when a consumer needs to consume a data buffer, it pops the last
+data buffer from the queue. The queue atomically exchanges the consumer's used
+data buffer with the queue's own data buffer. If the queue's data buffer is
+empty, the queue blocks the consumer in a tight loop until some producer swaps
+a full data buffer with the queue'e empty data buffer.
+
+A producer fills up its data buffer and pushes it to the queue.  The queue
+atomically exchanges the new data buffer with its own data buffer.  If there is
+data in the queue's data buffer, the queue blocks the producer until queue's
+data buffer is empty. If the queue's buffer still contains data, even after
+this producer managed to exchange its data buffer with the queue's data buffer,
+this impl drops the old data buffer.
+
+This makefile requires out of source build.
+$ mkdir l64
+$ cd l64
+$ make -f ../makefile
+
+Additional flags can be specified through command line arguments of make
+$ make -f ../makefile CXXFLAGS=-O2 CXX=clang
+
+Tested on linux, 32 and 64 bit binaries with gcc and 64 binary with clang.
