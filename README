@@ -1,0 +1,2 @@
+Various thread safe, lock based and lock free impl of queue and ring buffer
+data structures.

@@ -1,0 +1,2 @@
+This is a lock impl of a ring buffer.
+This impl is based on owner tid.
