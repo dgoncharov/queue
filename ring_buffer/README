@@ -1,0 +1,3 @@
+This is an impl of a ring buffer.
+This ring buffer is not thread safe.
+Requires external synchronization if used in a multithreaded program.

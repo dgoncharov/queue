@@ -177,3 +177,9 @@ int main(int , char* [])
 
     return status;
 }
+
+/* Copyright (c) 2021 Dmitry Goncharov
+ *
+ * Distributed under the BSD License.
+ * (See accompanying file COPYING).
+ */

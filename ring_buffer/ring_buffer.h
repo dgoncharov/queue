@@ -159,3 +159,9 @@ std::ostream& operator<<(std::ostream& out, const ring_buffer<T>& buf)
 }
 
 #endif
+
+/* Copyright (c) 2021 Dmitry Goncharov
+ *
+ * Distributed under the BSD License.
+ * (See accompanying file COPYING).
+ */

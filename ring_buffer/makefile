@@ -36,3 +36,8 @@ clean:
 	rm -f $(target) $(obj) $(dfiles) $(obj:.o=.td)
 
 makefile::;
+
+# Copyright (c) 2021 Dmitry Goncharov
+#
+# Distributed under the BSD License.
+# (See accompanying file COPYING).
