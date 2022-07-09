@@ -1,0 +1,1 @@
+This impl has a buf. It fails to maintain the fifo order of a ring buffer.
