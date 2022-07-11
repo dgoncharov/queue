@@ -31,6 +31,16 @@ data buffer is empty. If the queue's buffer still contains data, even after
 this producer managed to exchange its data buffer with the queue's data buffer,
 this impl drops the old data buffer.
 
+The main issue of this design is that a producer does not push its data buffer
+until the data buffer is full. A consumer could be ready to process, but a
+producer is still waiting to fill up its data buffer. Makes this design a poor
+choice for a situation where producers depend on unpredictable flow of data,
+e.g. data coming from other programs over network. This design is okay when the
+flow of data to producers is predictable, e.g. from a local file.
+
+On the other hand, this design has a performance advantage, because atomic
+access is performed once per data buffer, rather than once per data item.
+
 This makefile requires out of source build.
 $ mkdir l64
 $ cd l64
