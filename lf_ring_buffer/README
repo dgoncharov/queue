@@ -1,2 +1,5 @@
-This is a lock impl of a ring buffer.
+This is a lock free impl of a ring buffer.
 This impl is based on owner tid.
+This owner based synchronization can cause threads waiting on a slot to burn
+cpu, should the scheduler decide to put a thread to sleep while the thread is
+occupying the slot.

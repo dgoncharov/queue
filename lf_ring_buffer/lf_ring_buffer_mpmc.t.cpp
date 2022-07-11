@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 
-enum {bufsz = 8};
+enum {bufsz = 256};
 
 static
 char* generate(pid_t pid, int k)

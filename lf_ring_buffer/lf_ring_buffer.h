@@ -23,6 +23,8 @@ private:
     buffer* d_begin;
     std::atomic<buffer*> d_wpos;
     std::atomic<buffer*> d_rpos;
+    std::atomic<int> d_wcnt;
+    std::atomic<int> d_rcnt;
 };
 
 #endif
